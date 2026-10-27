@@ -20,6 +20,7 @@ grep -q 'SystemMode *: 80MB' source/netsurf/nsfb_himem.rsf
 make -C source build JOBS=2 V=1
 mkdir -p dist
 cp source/nsfb.3dsx dist/nsfb.3dsx
+cp web2-fixtures/browser-smoke.html dist/browser-smoke.html
 cd source/netsurf
 test -s nsfb
 test -s nsfb.smdh
