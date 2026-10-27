@@ -1,0 +1,40 @@
+name: NetSurf 3DS CIA - O3DS and N3DS
+on:
+  push:
+    branches:
+      - netsurf-3ds-cia-build
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    container:
+      image: devkitpro/devkitarm:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git curl ca-certificates unzip build-essential make pkg-config flex bison python3
+      - name: Install 3DS libraries
+        run: |
+          dkp-pacman -Sy --noconfirm 3ds-dev 3ds-sdl 3ds-mbedtls 3ds-curl 3ds-libpng 3ds-libjpeg-turbo 3ds-libiconv 3ds-freetype
+      - name: Install makerom v0.19.0
+        run: |
+          curl -fL --retry 3 \
+            https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.19.0/makerom-v0.19.0-ubuntu_x86_64.zip \
+            -o /tmp/makerom.zip
+          mkdir -p /tmp/makerom
+          unzip -q /tmp/makerom.zip -d /tmp/makerom
+          find /tmp/makerom -type f -name makerom -exec cp {} /usr/local/bin/makerom \;
+          chmod +x /usr/local/bin/makerom
+      - name: Cross-compile local browser, then package O3DS and N3DS CIAs
+        run: bash scripts/build-netsurf-3ds.sh
+      - name: Publish installable CIAs, 3DSX and checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: netsurf-3ds-cia
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
