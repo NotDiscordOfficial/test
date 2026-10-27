@@ -6,8 +6,10 @@ export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
 export PKG_CONFIG_PATH="$DEVKITPRO/portlibs/3ds/lib/pkgconfig"
 
 git clone --depth=1 https://github.com/socksprox/netsurf-3ds.git source
-# This fork tracks generated build-stamp artifacts in git; force the full rebuild.
-rm -f source/inst-framebuffer/build-stamp
+# This fork tracks generated artifacts from another host. Purge them so
+# stale build stamps and macOS .o/.a files cannot poison Linux ARM builds.
+rm -rf source/inst-framebuffer
+find source -type d \( -name 'build-arm64-*' -o -name 'build-x86_64-*' \) -prune -exec rm -rf {} +
 # Verify the intended portable ARMv6K build and JS configuration.
 grep -q 'NETSURF_USE_DUKTAPE := YES' source/netsurf/Makefile.config
 grep -q 'CpuSpeed *: 804MHz' source/netsurf/nsfb.rsf
