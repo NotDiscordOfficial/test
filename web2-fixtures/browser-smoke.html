@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NetSurf 3DS Web 2.0 local smoke test</title>
+<style>
+body {font: 14px sans-serif; background:#f5f6fa; margin:12px; color:#222;}
+h1 {font-size:18px;}
+.test { margin:6px 0; padding:7px; background:white; border:1px solid #ccc; }
+.pass {background:#dcf7df;} .fail {background:#ffdddd;}
+.flex {display:flex;gap:8px;} .flex div {background:#a8d6ff;padding:4px;}
+button {min-height:30px;}
+</style>
+</head>
+<body>
+<h1>Local Web 2.0 smoke test</h1>
+<p>No network, server, analytics or external JavaScript required.</p>
+<div id="basic" class="test">JS engine: waiting</div>
+<div id="dom" class="test">DOM change: waiting</div>
+<div id="events" class="test">Event handler: tap button below</div>
+<button id="tap">Test click event</button>
+<div id="results"></div>
+<div class="test"><b>CSS flex test</b><div class="flex"><div>A</div><div>B</div><div>C</div></div></div>
+<script>
+(function(){
+  var area=document.getElementById("results");
+  function record(name, ok) {
+    var d=document.createElement("div");
+    d.className="test "+(ok?"pass":"fail");
+    d.appendChild(document.createTextNode((ok?"PASS: ":"MISSING: ")+name));
+    area.appendChild(d);
+  }
+  try {
+    document.getElementById("basic").innerHTML="JS engine: running";
+    document.getElementById("basic").className="test pass";
+    record("inline script execution",true);
+  } catch (e) {record("inline script execution: "+e,false);}
+  try{
+    var node=document.getElementById("dom");
+    node.appendChild(document.createTextNode(" / appended text"));
+    node.className="test pass";
+    record("DOM node creation and append",true);
+  } catch(e){record("DOM node creation and append: "+e,false);}
+  try {
+    document.getElementById("tap").addEventListener("click",function(){
+      document.getElementById("events").innerHTML="Event handler: works!";
+      document.getElementById("events").className="test pass";
+    });
+    record("addEventListener registration",true);
+  }catch(e){record("addEventListener: "+e,false);}
+  record("document.querySelector",typeof document.querySelector==="function");
+  record("document.querySelectorAll",typeof document.querySelectorAll==="function");
+  record("XMLHttpRequest",typeof XMLHttpRequest==="function");
+  record("fetch()",typeof fetch==="function");
+  record("Promise",typeof Promise==="function");
+  try {
+    var es6=eval("(function(){let v=1;const a=2;return v+a===3;})()");
+    record("let/const parsing",es6===true);
+  }catch(e){record("let/const parsing",false);}
+})();
+</script>
+</body>
+</html>
