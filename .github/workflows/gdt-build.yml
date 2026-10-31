@@ -1,0 +1,26 @@
+name: GDT build experiment
+on:
+  push:
+    branches: [gdt-build-experiment]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: jakka351/GenericDiagnosticTool
+          ref: 48eb1bd8023b2ef3d582ff5535628db8d0c9bd53
+          path: gdt
+      - uses: microsoft/setup-msbuild@v2
+      - uses: NuGet/setup-nuget@v2
+      - name: Restore
+        shell: pwsh
+        run: nuget restore gdt/GenericDiagnosticTool.sln -PackagesDirectory gdt/packages
+      - name: Build
+        shell: pwsh
+        run: msbuild gdt/Passthru.csproj /p:Configuration=Release /p:Platform=x86 /m
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GenericDiagnosticTool-baseline
+          path: gdt/bin/Release/
