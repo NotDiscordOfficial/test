@@ -1,0 +1,50 @@
+name: Rebuild Spanish Oak
+on:
+  push:
+    paths: [.github/workflows/spanish-oak-rebuild.yml]
+jobs:
+  rebuild:
+    runs-on: windows-latest
+    steps:
+      - name: Retrieve and decompile
+        shell: pwsh
+        run: |
+          Invoke-WebRequest 'https://raw.githubusercontent.com/jakka351/FG-Falcon/5168a40d59f8f94f7f5e29c299ebe6da59fe8fb2/Software/Spanish%20Oak%20Flash%20Tool/Spanish%20Oak%20Flash%20Tool.exe' -OutFile original.exe
+          dotnet tool install ilspycmd --tool-path tools
+          & ./tools/ilspycmd -p -o src original.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Resolve embedded dependencies
+        shell: pwsh
+        run: |
+          foreach ($name in @('metroframework', 'darkui', 'metroframework.fonts', 'costura', 'system.diagnostics.diagnosticsource', 'microsoft.build.utilities.v3.5')) {
+            $source = "src/costura.$name.dll.compressed"
+            if (Test-Path $source) {
+              $inputStream = [IO.File]::OpenRead($source)
+              try {
+                $z = [IO.Compression.DeflateStream]::new($inputStream, [IO.Compression.CompressionMode]::Decompress)
+                $output = [IO.File]::Create("src/$name.dll")
+                try { $z.CopyTo($output) } finally { $output.Dispose(); $z.Dispose() }
+              } finally { $inputStream.Dispose() }
+            }
+          }
+          $proj = 'src/Spanish Oak Flash Tool.csproj'
+          $xml = [xml](Get-Content $proj -Raw)
+          $refs = $xml.CreateElement('ItemGroup')
+          foreach ($name in @('metroframework', 'darkui', 'metroframework.fonts')) {
+            $node = $xml.CreateElement('Reference')
+            $node.SetAttribute('Include', $name)
+            $hint = $xml.CreateElement('HintPath')
+            $hint.InnerText = "$name.dll"
+            [void]$node.AppendChild($hint)
+            [void]$refs.AppendChild($node)
+          }
+          [void]$xml.Project.AppendChild($refs)
+          $xml.Save((Resolve-Path $proj))
+      - name: Build
+        shell: pwsh
+        run: dotnet build 'src/Spanish Oak Flash Tool.csproj' -c Release
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spanish-oak-rebuild-diagnostics
+          path: src/bin/Release/
