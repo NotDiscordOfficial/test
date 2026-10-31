@@ -40,9 +40,10 @@ jobs:
           }
           [void]$xml.Project.AppendChild($refs)
           $xml.Save((Resolve-Path $proj))
+      - uses: microsoft/setup-msbuild@v2
       - name: Build
         shell: pwsh
-        run: dotnet build 'src/original.csproj' -c Release
+        run: msbuild 'src/original.csproj' /restore /p:Configuration=Release
       - uses: actions/upload-artifact@v4
         if: always()
         with:
