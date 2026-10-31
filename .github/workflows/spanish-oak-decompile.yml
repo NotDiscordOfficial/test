@@ -16,7 +16,8 @@ jobs:
         shell: pwsh
         run: |
           dotnet tool install ilspycmd --tool-path tools
-          ./tools/ilspycmd.exe -p -o decompiled 'out/Spanish Oak Flash Tool.exe'
+          Get-ChildItem tools -Recurse | Select-Object -ExpandProperty FullName
+          & ./tools/ilspycmd -p -o decompiled 'out/Spanish Oak Flash Tool.exe'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Launch smoke test
         shell: pwsh
