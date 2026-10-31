@@ -1,0 +1,35 @@
+name: Inspect Spanish Oak binary
+on:
+  push:
+    paths:
+      - .github/workflows/spanish-oak-decompile.yml
+jobs:
+  inspect:
+    runs-on: windows-latest
+    steps:
+      - name: Download binary
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          Invoke-WebRequest 'https://raw.githubusercontent.com/jakka351/FG-Falcon/5168a40d59f8f94f7f5e29c299ebe6da59fe8fb2/Software/Spanish%20Oak%20Flash%20Tool/Spanish%20Oak%20Flash%20Tool.exe' -OutFile 'out/Spanish Oak Flash Tool.exe'
+      - name: Decompile executable
+        shell: pwsh
+        run: |
+          dotnet tool install ilspycmd --tool-path tools
+          ./tools/ilspycmd.exe -p -o decompiled 'out/Spanish Oak Flash Tool.exe'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Launch smoke test
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $proc = Start-Process -FilePath 'out/Spanish Oak Flash Tool.exe' -PassThru
+          Start-Sleep -Seconds 8
+          $proc.Refresh()
+          "HasExited=$($proc.HasExited)" | Out-File out/launch-test.txt
+          if ($proc.HasExited) { "ExitCode=$($proc.ExitCode)" | Out-File out/launch-test.txt -Append } else { Stop-Process -Id $proc.Id -Force }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spanish-oak-inspection
+          path: |
+            out/launch-test.txt
+            decompiled/
