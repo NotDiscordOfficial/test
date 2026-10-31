@@ -27,7 +27,7 @@ jobs:
               } finally { $inputStream.Dispose() }
             }
           }
-          $proj = 'src/Spanish Oak Flash Tool.csproj'
+          $proj = 'src/original.csproj'
           $xml = [xml](Get-Content $proj -Raw)
           $refs = $xml.CreateElement('ItemGroup')
           foreach ($name in @('metroframework', 'darkui', 'metroframework.fonts')) {
@@ -42,7 +42,7 @@ jobs:
           $xml.Save((Resolve-Path $proj))
       - name: Build
         shell: pwsh
-        run: dotnet build 'src/Spanish Oak Flash Tool.csproj' -c Release
+        run: dotnet build 'src/original.csproj' -c Release
       - uses: actions/upload-artifact@v4
         if: always()
         with:
