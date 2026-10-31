@@ -1,0 +1,23 @@
+name: Inspect Spanish Oak release
+on:
+  push:
+    paths:
+      - .github/workflows/spanish-oak-inspect.yml
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: windows-latest
+    steps:
+      - name: Download author's binary and README
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          $base = 'https://raw.githubusercontent.com/jakka351/FG-Falcon/5168a40d59f8f94f7f5e29c299ebe6da59fe8fb2/Software/Spanish%20Oak%20Flash%20Tool'
+          Invoke-WebRequest "$base/Spanish%20Oak%20Flash%20Tool.exe" -OutFile 'release/Spanish Oak Flash Tool.exe'
+          Invoke-WebRequest "$base/README.md" -OutFile 'release/README-author.md'
+          Get-FileHash 'release/Spanish Oak Flash Tool.exe' -Algorithm SHA256 | Format-List | Out-File release/SHA256.txt
+          Get-Item 'release/Spanish Oak Flash Tool.exe' | Select-Object -ExpandProperty VersionInfo | Out-File release/VersionInfo.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: author-spanish-oak-exe
+          path: release/
